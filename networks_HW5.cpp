@@ -10,6 +10,7 @@ using namespace std;
 #define PORT 3800
 #define IP "64.183.98.170"
 #define DISCONNECT 2
+#define EXIT_MSG "Disconnecting"
 
 
 int main() {
@@ -17,8 +18,6 @@ int main() {
 	int CreateSocket = 0,n = 0;
     char dataReceived[1024] = {'0'};
     char sendData[1024] = {'0'};
-    char board[9] = {'-'};
-    bool player;
     struct sockaddr_in ipOfServer;
     bool keepTalking = true;
     
@@ -40,20 +39,46 @@ int main() {
 		return -1;
 	}
 	
-	if((n = read(CreateSocket, dataReceived, sizeof(dataReceived)-1)) > 0) {
-	    dataReceived[n] = 0;	
-	    cout << dataReceived << endl;
-    }
-    else {
-		cout << "read error\n";
+	//server-client communication
+	while(keepTalking) {
+		
+		//read information
+		while((n = read(CreateSocket, dataReceived, sizeof(dataReceived))) > 0) {
+			
+			if(n < 0) {
+				printf("read error\n");
+				return -1;
+			}
+			else if(n == 0) {
+				break;
+			}
+			
+			//display server output to stdout
+			dataReceived[n] = '\0';
+			cout << dataReceived << endl;
+			
+			if(strcmp(dataReceived, EXIT_MSG)) {
+				keepTalking = false;
+				break;	
+			}
+		}
+		
+		//send information
+		if(keepTalking) {
+			
+			cin >> sendData;
+			
+		    if(send(CreateSocket, sendData, sizeof(sendData), MSG_EOR) < 0) {
+			    printf("send failed\n");
+		    }
+		}
+		else {
+			break;
+		}	
 	}
-	
-	
-	
-	
+
 	//shutdown the socket 
-    if(shutdown(CreateSocket, DISCONNECT) < 0)
-    {
+    if(shutdown(CreateSocket, DISCONNECT) < 0) {
         cout << "shutdown fail\n";
     }
     
